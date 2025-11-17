@@ -1,0 +1,189 @@
+---
+title: "Netflix Ratings Simple Linear Regression"
+author: "Hope Tatenda Mutema"
+format: 
+ html:
+      embed-resources: true
+editor: visual
+---
+
+# Simple Linear Regression
+
+```{r}
+#loading packages for analysis
+library(tidyverse)
+library(summarytools)
+library(stargazer)
+library(ggplot2)
+```
+
+```{r}
+#importing the data set for analysis
+netflix_data <- read.csv("~/Documents/Project 3/total_netflix_2023 new.csv")
+
+#cleaning the data
+#Creating a subset 
+
+netflix_data$RatingNum <- as.numeric(netflix_data$Rating) #create another numeric variable for rating (imputing the variable RatingNum) in the data set
+
+#cleaning the data removing the NA's
+netflix_clean <- subset(netflix_data, !is.na(RatingNum) & Available.Globally. %in% c("Yes","No")) # removing missing rating numbers and taking yes or no in avaliable globally
+
+#regression model
+netflix_regression_model <- lm(netflix_clean$RatingNum ~ netflix_clean$Available.Globally.)
+summary(netflix_regression_model)
+
+#using stagazer for better presentation
+stargazer(netflix_regression_model,type = 'text',single.row = T, digits = 3) #rounded to 3dp
+```
+
+## Regression Analysis
+
+This analysis uses Ordinary Least Square (OLS) regression to explore the relationship between a movie's rating number, which serves as the Dependent Variable (DV), and whether it is available globally, which serves as the Independent Variable (IV). The goal of OLS is to fit a straight line through the data to minimize the sum of squared residuals possible.
+
+Since Available Global is a categorical variable with "Yes" or "No" options, it is treated as a **dichotomous (binary) variable** in this model. In the output, Yes is the indicator variable (coded as 1), meaning the "No" category is the reference group (coded as 0).
+
+The structure of the OLS regression formula is $y = b_0 + b_1X + \epsilon$
+
+**Regression Equation**
+
+Based on the coefficients, the fitted regression equation is:
+
+$$
+\mathbf{\widehat{\text{Movie Rating}} = 6.445 + 0.128 (\text{Available Globally Yes})}
+$$
+
+**Analysis of Coefficients**
+
+**1. The Intercept** $(\mathbf{b_0})$
+
+The intercept, 6.450 is the point where the regression line crosses the Y-axis. In the context of a 0/1 binary independent variable, the intercept represents the average value of the DV when the IV equals zero that is when the movie is not available globally.
+
+• **Estimate:** 6.450
+
+• **Significance:** The p-value is less than $2 \times 10^{-16}$ , indicating that the intercept is statistically significant (i.e., $b_0$ is significantly different from zero)
+
+• **Interpretation:** **When a movie is NOT available globally (the reference group, X=0), the average movie rating is 6.450.**
+
+2.  **The Slope Coefficient** $(\mathbf{b_1})$
+
+    The coefficient for available globally (Yes) is the slope of the regression line, representing the average change in the DV associated with a unit change in the IV. Since this IV is binary, the coefficient shows the difference in the average DV score between the "Yes" group (coded 1) and the reference group ("No," coded 0).
+
+• **Estimate:** 0.128
+
+• **Significance:** The p-value is $1.45 \times 10^{-06}$ . This is highly statistically significant, meaning we reject the null hypothesis $(H_0: B = 0)$, concluding that the coefficient is not flat and does affect the rating.
+
+• **Interpretation:** **Movies that are available globally have an average rating that is 0.128 points higher than movies that are not available globally.** This is an average increase in rating associated with global availability which is very small or of little effect.
+
+3.  **Model Fit and Overall Significance**
+
+    **F-statistic:** 23.225
+
+    I**nterpretation:** Since the p-value is extremely small, **the model is statistically significant**. The F-ratio (23.225) is much greater than 1, indicating that the model performs better with the predictor variable than without it.
+
+4.  $\mathbf{R^2}$ **(Coefficient of Determination)**
+
+    The $\mathbf{R^2}$ value 0.001 is the coefficient of determination, which indicates the amount of variance in the DV Movie Ratings is explained by the IV Available Global.
+
+    **Interpretation:**
+
+    This $R^2$ value suggests that approximately **0.13%** of the variation in movie ratings is explained by whether the movie is available globally. Despite the statistical significance of the coefficient and the overall model (F-test), the predictive power of global availability alone is very weak.
+
+# Regression Diagnostics (Testing Regression Assumptions)
+
+```{r}
+#plotting the diagnostic graphs for regression analysis
+plot(netflix_regression_model)
+
+```
+
+# Regression Diagnostics
+
+**Residual Vs Fitter**
+
+Each fitted value is simply the mean for one of the two groups, and all points in a group share that fitted value, with their residuals distributed vertically which explains that the Independent Variable is Binary with only two outcomes available global (Yes) and not available global (No). There is no visible non linearity or obvious pattern, indicating the model is appropriate for the data structure.
+
+**QQ Residuals Plot**
+
+There is a clear deviation from the diagonal dashed line, especially at the ends where the residuals curve away in both directions, this reflects that the residuals are not perfectly normal. The pronounced tails on the plot may indicate skewness, outliers, or heavy tails in the residuals, meaning regression model assumptions (the normality of regression residuals ) might not fully hold.
+
+**Scale Location Plot**
+
+for a binary predictor, it's expected that this plot will show two vertical clusters. Since the vertical spread (residual variance) is similar in both clusters, the model's equal variance assumption is reasonable. No strong evidence of heteroscedaticity is present, so equal variance assumptions holds reasonably well.
+
+**Residual vs Leverage Plot**
+
+The plot confirms that the regression has a binary predictor (Available Globally), there is no influential data points affecting the model fit. Most data points are well within acceptable leverage and influence thresholds.
+
+**Conclusion**
+
+The model fits appropriately for the structure of the binary predictor, with no evidence of influential outliers or unequal variance.
+
+-   the major issue is some deviation from the normality in the residuals, typical for models with binary predictors, suggesting caution when relying on hypothesis tests or confidence intervals.
+
+-   Since the regression assumptions of linearity, equal variance, and non influence are supported, but slightly violated for normality. The model provides a reliable estimate of group mean differences, with careful consideration for inference.
+
+# Summary Statistics
+
+```{r}
+#summary statistics
+#Movie Ratings Summary
+descr(netflix_clean$RatingNum)
+
+#Available Globally summary
+# Frequency count and proportion for 'Yes' and 'No' in Available.Globally.
+table_summary <- table(netflix_clean$Available.Globally.)
+prop_summary <- prop.table(table_summary)
+
+# Print both
+#frequency table
+addmargins(table_summary)
+
+#percentage table
+
+round(addmargins(prop_summary),2)*100
+
+
+```
+
+# Missing Values in the original data set
+
+```{r}
+#finding the missing values
+missing_values <- sum(is.na(netflix_data))
+
+paste('The total number of missing values in the origina netflix data set is: ',missing_values)
+```
+
+# Creating a scatter plot for regression Analysis
+
+```{r}
+# Recode Available.Globally. to numeric Yes=1, No=0
+netflix_clean$AvailableGloballyNum <- ifelse(netflix_clean$Available.Globally. == "Yes", 1,
+                                      ifelse(netflix_clean$Available.Globally. == "No", 0, NA))
+
+# Scatterplot 
+plot(
+  netflix_clean$AvailableGloballyNum, 
+  netflix_clean$RatingNum,
+  pch = 10,
+  col = 'blue',
+  cex = 1.3,
+  main = "Movie Ratings by Global Availability",
+  xlab = "Available Globally",
+  ylab = "Movie Ratings",
+  xlim = c(0, 1),           
+  xaxt = "n",
+  cex.main = 1.5,    # Increase main title font size
+  cex.lab = 1.5,   # Increase axis labels font size
+  cex.axis = 1.5   # Increase tick label font size
+)
+
+axis(side = 1, at = c(0, 1), labels = c("No", "Yes"),cex.axis = 1.5)
+
+# fitted regression model
+model <- lm(RatingNum ~ AvailableGloballyNum, data = netflix_clean)
+
+abline(model, col = "red", lwd = 2)
+
+```
